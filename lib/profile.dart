@@ -94,7 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2D7CAD), // Blue background
+      backgroundColor: const Color(0xFF2D7CAD), 
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: const Color(0xFF2D7CAD),

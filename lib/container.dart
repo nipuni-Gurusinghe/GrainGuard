@@ -120,7 +120,7 @@ class _ContainerPageState extends State<ContainerPage> {
             child: const Text("Update"),
             onPressed: () {
               final newName = nameCtrl.text.trim();
-              if (newName.isEmpty) return; // Do not allow empty names
+              if (newName.isEmpty) return; 
               Navigator.pop(context, true);
             },
           ),
@@ -132,8 +132,8 @@ class _ContainerPageState extends State<ContainerPage> {
       final newName = nameCtrl.text.trim();
       if (newName.isEmpty) return;
 
-      await _userContainersRef.child(containerId).update({'name': newName});
-      // StreamBuilder will automatically update UI
+      await _userContainersRef.child(containerId).update({'name': newName}); ////auto update UI changes
+     
     }
   }
 

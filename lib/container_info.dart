@@ -23,7 +23,7 @@ class _ContainerInfoPageState extends State<ContainerInfoPage> {
   String fullWeight = "Loading...";
   String fillDay = "Loading...";
   final ScrollController _scrollController = ScrollController();
-  Map<String, double> usageData = {}; // Format: date -> weight
+  Map<String, double> usageData = {};
 
   @override
   void initState() {

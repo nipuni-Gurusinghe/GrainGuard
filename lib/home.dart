@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Ensure this file exists and has LoginPage class
+import 'login.dart'; 
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -10,7 +10,7 @@ class HomePage extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        color: const Color.fromARGB(255, 45, 124, 173), // ✅ Solid background color
+        color: const Color.fromARGB(255, 45, 124, 173), 
         child: SafeArea(
           child: Center(
             child: Padding(
