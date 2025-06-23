@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "482731147534",
+    "firebase_url": "https://smartjarcup-default-rtdb.firebaseio.com",
+    "project_id": "smartjarcup",
+    "storage_bucket": "smartjarcup.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482731147534:android:fc4710bf3b991c1a1bd75f",
+        "android_client_info": {
+          "package_name": "com.example.cw"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCso8hR5fl1xDTH2VstWNkgW16_NJqwvHk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
