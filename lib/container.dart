@@ -12,6 +12,7 @@ class ContainerPage extends StatefulWidget {
 }
 
 class _ContainerPageState extends State<ContainerPage> {
+  late final DatabaseReference _globalContainersRef;
   late final DatabaseReference _userContainersRef;
   late final String _uid;
 
@@ -20,14 +21,14 @@ class _ContainerPageState extends State<ContainerPage> {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      // Pop if no user logged in
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pop(context);
       });
       return;
     }
     _uid = user.uid;
-    _userContainersRef = FirebaseDatabase.instance.ref('$_uid/containers');
+    _globalContainersRef = FirebaseDatabase.instance.ref('containers');
+    _userContainersRef = FirebaseDatabase.instance.ref('users/$_uid/myContainers');
   }
 
   Future<void> _addNewContainer() async {
@@ -37,37 +38,64 @@ class _ContainerPageState extends State<ContainerPage> {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1B263B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Add New Container"),
+        title: const Text("Add New Container", style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: idCtrl,
-              decoration: const InputDecoration(hintText: "Enter Container ID"),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: "Enter Container ID",
+                hintStyle: TextStyle(color: Colors.white54),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(hintText: "Enter Container Name"),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: "Enter Container Name",
+                hintStyle: TextStyle(color: Colors.white54),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
-            child: const Text("Add"),
             onPressed: () async {
               final id = idCtrl.text.trim();
               final name = nameCtrl.text.trim();
               if (id.isEmpty || name.isEmpty) return;
-
-              await _userContainersRef.child(id).set({'id': id, 'name': name});
+              
+              // Add to global containers
+              await _globalContainersRef.child(id).set({
+                'id': id,
+                'name': name,
+                'ownerId': _uid,
+                'createdAt': ServerValue.timestamp,
+              });
+              
+              // Add reference to user's myContainers
+              await _userContainersRef.child(id).set(true);
+              
               if (mounted) Navigator.pop(context);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00ACC1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 3,
+              shadowColor: const Color(0xFF00ACC1).withOpacity(0.4),
+            ),
+            child: const Text("Add", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -78,15 +106,21 @@ class _ContainerPageState extends State<ContainerPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Container"),
-        content: const Text("Are you sure you want to delete this container?"),
+        backgroundColor: const Color(0xFF1B263B),
+        title: const Text("Delete Container", style: TextStyle(color: Colors.white)),
+        content: const Text("Are you sure you want to delete this container?",
+            style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text("Delete"),
           ),
@@ -95,6 +129,9 @@ class _ContainerPageState extends State<ContainerPage> {
     );
 
     if (confirmed == true) {
+      // Remove from global containers
+      await _globalContainersRef.child(containerId).remove();
+      // Remove from user's myContainers
       await _userContainersRef.child(containerId).remove();
     }
   }
@@ -105,24 +142,37 @@ class _ContainerPageState extends State<ContainerPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1B263B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Edit Container Name"),
+        title: const Text("Edit Container Name", style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: nameCtrl,
-          decoration: const InputDecoration(hintText: "Enter new container name"),
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: "Enter new container name",
+            hintStyle: TextStyle(color: Colors.white54),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
-            child: const Text("Update"),
             onPressed: () {
               final newName = nameCtrl.text.trim();
-              if (newName.isEmpty) return; 
+              if (newName.isEmpty) return;
               Navigator.pop(context, true);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00ACC1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 3,
+              shadowColor: const Color(0xFF00ACC1).withOpacity(0.4),
+            ),
+            child: const Text("Update", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -131,187 +181,191 @@ class _ContainerPageState extends State<ContainerPage> {
     if (confirmed == true) {
       final newName = nameCtrl.text.trim();
       if (newName.isEmpty) return;
-
-      await _userContainersRef.child(containerId).update({'name': newName}); ////auto update UI changes
-     
+      // Update in global containers
+      await _globalContainersRef.child(containerId).update({'name': newName});
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF2D7CAD), Color(0xFF2D7CAD)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  "Your Containers",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+      backgroundColor: const Color(0xFF0D1B2A),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Your Containers",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-              Expanded(
-                child: StreamBuilder<DatabaseEvent>(
-                  stream: _userContainersRef.onValue,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading data'));
-                    }
-                    if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
-                      return const Center(child: Text('No containers yet'));
-                    }
+            ),
+            Expanded(
+              child: StreamBuilder<DatabaseEvent>(
+                // Listen to the user's myContainers first
+                stream: _userContainersRef.onValue,
+                builder: (context, userSnapshot) {
+                  if (userSnapshot.hasError) {
+                    return const Center(child: Text('Error loading data', style: TextStyle(color: Colors.white)));
+                  }
+                  if (!userSnapshot.hasData || userSnapshot.data!.snapshot.value == null) {
+                    return const Center(child: Text('No containers yet', style: TextStyle(color: Colors.white)));
+                  }
 
-                    final dataMap = Map<String, dynamic>.from(
-                      snapshot.data!.snapshot.value as Map,
-                    );
+                  // Get the list of container IDs the user owns
+                  final userContainerIds = (userSnapshot.data!.snapshot.value as Map).keys.cast<String>();
+                  
+                  // Now listen to the global containers to get details
+                  return StreamBuilder<DatabaseEvent>(
+                    stream: _globalContainersRef.onValue,
+                    builder: (context, globalSnapshot) {
+                      if (globalSnapshot.hasError) {
+                        return const Center(child: Text('Error loading container details', style: TextStyle(color: Colors.white)));
+                      }
+                      if (!globalSnapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                    final containers = dataMap.values
-                        .cast<Map>()
-                        .map<Map<String, String>>((e) => {
-                              'id': e['id'] as String,
-                              'name': e['name'] as String,
-                            })
-                        .toList();
+                      final globalContainers = globalSnapshot.data!.snapshot.value as Map? ?? {};
+                      
+                      // Filter only the containers this user owns
+                      final containers = userContainerIds
+                          .where((id) => globalContainers.containsKey(id))
+                          .map((id) {
+                            final containerData = globalContainers[id] as Map;
+                            return {
+                              'id': id,
+                              'name': containerData['name'] as String,
+                            };
+                          })
+                          .toList();
 
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(12),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.95,
-                      ),
-                      itemCount: containers.length,
-                      itemBuilder: (_, i) {
-                        final c = containers[i];
-                        return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ContainerInfoPage(
-                                      containerId: c['id']!,
-                                      containerName: c['name']!,
+                      if (containers.isEmpty) {
+                        return const Center(child: Text('No containers yet', style: TextStyle(color: Colors.white)));
+                      }
+
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.8,
+                        ),
+                        itemCount: containers.length,
+                        itemBuilder: (_, i) {
+                          final c = containers[i];
+                          return Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1B263B),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Center(
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ContainerInfoPage(
+                                          containerId: c['id']!,
+                                          containerName: c['name']!,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(Icons.inventory_2, size: 26, color: Colors.white),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text('ID: ${c['id']}',
+                                            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                      ],
                                     ),
                                   ),
                                 ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.3),
-                                        shape: BoxShape.circle,
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Name: ${c['name']}',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const Spacer(),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.white54, size: 18),
+                                        tooltip: 'Edit container name',
+                                        onPressed: () => _editContainerName(c['id']!, c['name']!),
                                       ),
-                                      child: const Icon(Icons.inventory_2,
-                                          size: 26, color: Colors.white),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text('ID: ${c['id']}',
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 13)),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Flexible(
-                                          child: Text('Name: ${c['name']}',
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold),
-                                              overflow: TextOverflow.ellipsis),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            color: Colors.white70,
-                                            size: 18,
-                                          ),
-                                          tooltip: 'Edit container name',
-                                          onPressed: () => _editContainerName(
-                                            c['id']!,
-                                            c['name']!,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline),
+                                        tooltip: 'Delete container',
+                                        iconSize: 20,
+                                        color: Colors.redAccent.withOpacity(0.6),
+                                        onPressed: () => _confirmAndDeleteContainer(c['id']!),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                onPressed: () => _confirmAndDeleteContainer(c['id']!),
-                                icon: const Icon(Icons.delete, size: 16),
-                                label: const Text("Delete"),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  foregroundColor: Colors.redAccent,
-                                  side: const BorderSide(color: Colors.redAccent),
-                                  elevation: 0,
-                                  minimumSize: const Size(80, 32),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8)),
-                                  textStyle: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
               ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: SizedBox(
+                  width: 220,
                   child: ElevatedButton(
                     onPressed: _addNewContainer,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.deepOrangeAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
+                      backgroundColor: const Color(0xFF00ACC1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 3,
+                      shadowColor: const Color(0xFF00ACC1).withOpacity(0.4),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Text(
-                        "Add more containers",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                    child: const Text(
+                      "Add more containers",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: const Navbar(currentIndex: 1),
