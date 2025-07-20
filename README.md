@@ -1,16 +1,15 @@
-# cw
+# 🧠 Smart Jar App (Flutter + Firebase)
 
-A new Flutter project.
+A Flutter application that visualizes real-time data from a Smart Jar system using Firebase Realtime Database. The jar tracks food container weight using an ESP8266 + HX711 load cell, and this app provides a clean interface to monitor status, history, and notifications.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+📱 Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 🔒 Firebase Authentication
+- 📊 Real-time container weight visualization
+- 🧾 Usage history tracking
+- 🔔 Refill notifications UI
+- 👤 User profile and registration
+- 🌓 Light/Dark theme switching
+- 📦 Multi-container support 
